@@ -36,10 +36,8 @@ jobs:
         node-version: 16
     - name: Install dependencies
       run: |
-        ls -laR
         pwd
-        npm ci
-      working-directory: tests
+        npm install
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
