@@ -16,13 +16,13 @@ on:
         description: keeps the env running if not empty
         required: false
         default: ""
+defaults:
+  run:
+    working-directory: tests
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: tests
     steps:
     -
       uses: AbsaOSS/k3d-action@v2.4.0
