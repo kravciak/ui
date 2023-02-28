@@ -1,4 +1,7 @@
 name: Playwright Tests
+defaults:
+  run:
+    working-directory: tests
 on:
   pull_request:
     paths: [ package.json ]
