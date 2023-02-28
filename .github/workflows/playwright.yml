@@ -1,7 +1,4 @@
 name: Playwright Tests
-defaults:
-  run:
-    working-directory: tests
 on:
   pull_request:
     paths: [ package.json ]
@@ -23,6 +20,9 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests
     steps:
     -
       uses: AbsaOSS/k3d-action@v2.4.0
