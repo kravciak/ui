@@ -5,7 +5,7 @@ on:
     tags:        
       - '*'
   schedule:
-    - cron: "11 2 * * *"
+    - cron: "0 2 * * *"
 
 defaults:
   run:
@@ -19,19 +19,20 @@ jobs:
     # ==================================================================================================
     # Install requirements
     - uses: actions/checkout@v3
+# those are preinstalled, do I need them?
 #    - uses: azure/setup-helm@v3
 #    - uses: azure/setup-kubectl@v3
 #    - uses: actions/setup-node@v3
 #      with:
 #        node-version: 18
-    - name: Set up playwright
+    - name: Install playwright
       run: |
         npm install
         npx playwright install --with-deps chromium
 
     # ==================================================================================================
     # Create cluster and Install rancher
-    - name: "Create Kubernetes cluster"
+    - name: "Create kubernetes cluster"
       uses: AbsaOSS/k3d-action@v2.4.0
       with:
         cluster-name: ${{ github.repository_owner }}-ghactions-cluster
