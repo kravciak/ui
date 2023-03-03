@@ -26,11 +26,7 @@ jobs:
     steps:
     - name: Set up Helm
       uses: azure/setup-helm@v3
-#      with:
-#        version: v3.11.1
     - uses: azure/setup-kubectl@v3
-#      with:
-#         version: '<version>' # default is latest stable
     - uses: AbsaOSS/k3d-action@v2.4.0
       name: "Create Kubernetes cluster"
       with:
@@ -53,9 +49,6 @@ jobs:
             grep -vE '([0-9]+)/\1 +Running' <<< $output || break
             [ $i -ne 20 ] && sleep 30 || { echo "Godot: pods not running"; exit 1; }
         done
-    - name: Install package
-      run: |
-        sudo apt-get -y install jq
     - name: Install Rancher
       run: |
         IP_MASTERS=$(k3d cluster list ${{ github.repository_owner }}-ghactions-cluster -o json | jq -r '[.[].nodes[] | select(.role == "server").IP.IP] | first')
@@ -65,14 +58,14 @@ jobs:
             --set hostname=${IP_MASTERS}.nip.io \
             --set bootstrapPassword=sa \
             --devel
-        echo "{RANCHER_URL}={https://$IP_MASTERS.nip.io}" >> $GITHUB_ENV
         for i in {1..20}; do
-            output=$(kubectl get pods --no-headers -o wide -n cattle-system | grep -vw Completed || echo 'Fail')$'\n'
-            output+=$(kubectl get pods --no-headers -o wide -n cattle-fleet-system | grep -vw Completed || echo 'Fail')$'\n'
-            output+=$(kubectl get pods --no-headers -o wide -n cattle-fleet-local-system | grep -vw Completed || echo 'Fail')
+            output=$(kubectl get pods --no-headers -o wide -n cattle-system | grep -vw Completed || echo 'Wait: ns:cattle-system')$'\n'
+            output+=$(kubectl get pods --no-headers -o wide -n cattle-fleet-system | grep -vw Completed || echo 'Wait: ns:cattle-fleet-system')$'\n'
+            output+=$(kubectl get pods --no-headers -o wide -n cattle-fleet-local-system | grep -vw Completed || echo 'Wait ns:cattle-fleet-local-system')
             grep -vE '([0-9]+)/\1 +Running|^$' <<< $output || break
             [ $i -ne 20 ] && sleep 30 || { echo "Godot: pods not running"; exit 1; }
         done
+        echo "RANCHER_URL=https://$IP_MASTERS.nip.io" >> $GITHUB_ENV
     - name: Run Playwright tests
       run: npx playwright test installation
     - uses: actions/upload-artifact@v3
@@ -81,3 +74,7 @@ jobs:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
+
+#      RANCHER_URL=${{env.RANCHER_URL}}
+#      env:
+#        RANCHER_URL: 
