@@ -65,6 +65,14 @@ jobs:
             --set hostname=${IP_MASTERS}.nip.io \
             --set bootstrapPassword=sa \
             --devel
+        echo "{RANCHER_URL}={https://$IP_MASTERS.nip.io}" >> $GITHUB_ENV
+        for i in {1..20}; do
+            output=$(kubectl get pods --no-headers -o wide -n cattle-system | grep -vw Completed || echo 'Fail')$'\n'
+            output+=$(kubectl get pods --no-headers -o wide -n cattle-fleet-system | grep -vw Completed || echo 'Fail')$'\n'
+            output+=$(kubectl get pods --no-headers -o wide -n cattle-fleet-local-system | grep -vw Completed || echo 'Fail')
+            grep -vE '([0-9]+)/\1 +Running|^$' <<< $output || break
+            [ $i -ne 20 ] && sleep 30 || { echo "Godot: pods not running"; exit 1; }
+        done
     - name: Run Playwright tests
       run: npx playwright test installation
     - uses: actions/upload-artifact@v3
