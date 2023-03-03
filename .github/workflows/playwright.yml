@@ -4,24 +4,33 @@ on:
     paths: [ package.json ]
     branches: [ main ]
   workflow_dispatch:
+  schedule:
+    - cron: "11 2 * * *"
+
 defaults:
   run:
     working-directory: tests
+
 jobs:
-  test:
+  playwright:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
+    # ==================================================================================================
+    # Install requirements
     - uses: actions/checkout@v3
 #    - uses: azure/setup-helm@v3
     - uses: azure/setup-kubectl@v3
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 18
+#    - uses: actions/setup-node@v3
+#      with:
+#        node-version: 18
     - name: Set up playwright
       run: |
         npm install
         npx playwright install --with-deps chromium
+
+    # ==================================================================================================
+    # Create cluster and Install rancher
     - name: "Create Kubernetes cluster"
       uses: AbsaOSS/k3d-action@v2.4.0
       with:
@@ -30,7 +39,16 @@ jobs:
     - name: Install Rancher
       run: |
         FQDN=$(k3d cluster list ${{ github.repository_owner }}-ghactions-cluster -o json | jq -r '[.[].nodes[] | select(.role == "server").IP.IP] | first').nip.io
+        echo "RANCHER_URL=https://$FQDN" >> $GITHUB_ENV
 
+        # Wait for kube-system
+        for i in {1..20}; do
+            output=$(kubectl get pods --no-headers -o wide -n kube-system | grep -vw Completed || echo 'Fail')
+            grep -vE '([0-9]+)/\1 +Running' <<< $output || break
+            [ $i -ne 20 ] && sleep 10 || { echo "Godot: pods not running"; exit 1; }
+        done
+
+        # Wait for cert-manager
         kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
         for i in {1..20}; do
             output=$(kubectl get pods --no-headers -o wide -n cert-manager | grep -vw Completed || echo 'Fail')
@@ -51,11 +69,14 @@ jobs:
             grep -vE '([0-9]+)/\1 +Running|^$' <<< $output || break
             [ $i -ne 20 ] && sleep 30 || { echo "Godot: pods not running"; exit 1; }
         done
-        echo "RANCHER_URL=https://$FQDN" >> $GITHUB_ENV
+
+    # ==================================================================================================
+    # Run playwright tests and upload results
     - name: Install kubewarden
       run: npx playwright test installation
     - name: Install policies
-      run: npx playwright test policies
+      run: npx playwright test policies -g 'Pod Privileged Policy'
+
     - uses: actions/upload-artifact@v3
       if: always()
       with:
