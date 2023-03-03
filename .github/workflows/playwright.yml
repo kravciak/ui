@@ -45,14 +45,6 @@ jobs:
         npm install
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test installation
-    - uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
     - name: Install cert-manager
       run: |
         kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
@@ -68,3 +60,11 @@ jobs:
             --set hostname=${IP_MASTERS}.nip.io \
             --set bootstrapPassword=sa \
             --devel
+    - name: Run Playwright tests
+      run: npx playwright test installation
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
