@@ -1,9 +1,9 @@
 name: Playwright Tests
 on:
-  pull_request:
-    paths: [ package.json ]
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    tags:        
+      - '*'
   schedule:
     - cron: "11 2 * * *"
 
