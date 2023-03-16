@@ -64,7 +64,7 @@ jobs:
     - name: Patch git ref name into dashboard
       uses: mikefarah/yq@master
       with:
-        cmd: yq -i '.kubewarden.dashboard.intro += "(" + ${{ github.ref_name }} + ")"' pkg/kubewarden/l10n/en-us.yaml
+        cmd: yq -i '.kubewarden.dashboard.intro += "(${{ github.ref_name }})"' pkg/kubewarden/l10n/en-us.yaml
 
     - name: Prepare ENV for build
       run: |
