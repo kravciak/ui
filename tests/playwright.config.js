@@ -74,7 +74,8 @@ const config = {
     cwd: '..',
     timeout: 300_000,
     env: {
-      ROUTER_BASE: '/dashboard/'
+      ROUTER_BASE: '/dashboard/',
+      NODE_OPTIONS: '--openssl-legacy-provider'
     }
   } : undefined
 };
