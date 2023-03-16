@@ -12,33 +12,35 @@ const policies = [
   { name: 'Allowed Proc Mount Types PSP' },
   { name: 'Apparmor PSP' },
   { name: 'Capabilities PSP' },
+  { name: 'Deprecated API Versions', action: setupDeprecatedAPIVersions }, // https://github.com/kubewarden/ui/issues/242 - version not required
   { name: 'Disallow Service Loadbalancer' },
   { name: 'Disallow Service Nodeport' },
+  { name: 'Echo' },
   { name: 'Environment Variable Secrets Scanner' },
+  { name: 'Environment Variable Policy', action: setupEnvironmentVariablePolicy }, // - at least one rule is required, UI does not check
   { name: 'Flexvolume Drivers Psp' },
+  { name: 'Host Namespaces PSP' },
+  { name: 'Hostpaths PSP' },
   { name: 'Ingress Policy' },
   { name: 'Pod Privileged Policy' },
+  // { name: 'Pod Runtime', action: null }, broken (empty) policy rules - https://github.com/kubewarden/pod-runtime-class-policy/issues/14
   { name: 'Readonly Root Filesystem PSP' },
   { name: 'Safe Annotations' },
   { name: 'Safe Labels' },
   { name: 'Seccomp PSP' },
+  { name: 'Selinux PSP', action: setupSelinuxPSP }, // https://github.com/kubewarden/ui/issues/240 - extra RunAsAny
   { name: 'Sysctl PSP' },
   { name: 'Trusted Repos' },
-  { name: 'Volumes PSP' },
-  // { name: 'Pod Runtime', action: null }, broken (empty) policy rules - https://github.com/kubewarden/pod-runtime-class-policy/issues/14
-  { name: 'Hostpaths PSP' },
   { name: 'User Group PSP', action: setupUserGroupPSP }, // - only one rule should be required - https://github.com/kubewarden/user-group-psp-policy/issues/45
   { name: 'Verify Image Signatures', action: setupVerifyImageSignatures }, // - add button not workind -  - https://github.com/kubewarden/ui/issues/239 - https://github.com/kubewarden/ui/issues/237
   { name: 'volumeMounts', action: setupVolumeMounts }, // - https://github.com/kubewarden/ui/issues/259
-  { name: 'Host Namespaces PSP' },
-  { name: 'Selinux PSP', action: setupSelinuxPSP }, // https://github.com/kubewarden/ui/issues/240 - extra RunAsAny
-  { name: 'Environment Variable Policy', action: setupEnvironmentVariablePolicy }, // - at least one rule is required, UI does not check
-  { name: 'Deprecated API Versions', action: setupDeprecatedAPIVersions }, // https://github.com/kubewarden/ui/issues/242 - version not required
+  { name: 'Volumes PSP' },
 ]
 
 const polmode   = process.env.mode || 'monitor'
 const polserver = process.env.server || 'default'
 const polkeep   = process.env.keep || false
+
 
 async function setupCustomPolicy(page) {
   await page.locator('input:near(:text("Module*"))').first().fill('ghcr.io/kubewarden/policies/pod-privileged:v0.2.4')
@@ -127,7 +129,8 @@ for (const policy of policies) {
         .locator('tr.main-row')
         .filter({has: page.getByRole('link', {name:polname, exact: true})})
         .locator('td.col-policy-status')
-      ).toHaveText('Active', {timeout: 120_000})
+      ).toHaveText('Active', {timeout: 220_000})
+
 
       // Delete policy
       await page.locator(`button[id$='+${polname}']`).click()  // id="actionButton+0+rancher-kubewarden-controller"
