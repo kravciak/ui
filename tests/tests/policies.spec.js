@@ -1,10 +1,12 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
-const { timeout } = require('../playwright.config');
 
 test.describe.configure({ mode: 'parallel' });
 
-// TODO: Scrape list of policies from ArtifactHub?
+const polmode   = process.env.mode || 'monitor'
+const polserver = process.env.server || 'default'
+const polkeep   = process.env.keep || false
+
 const policies = [
   { name: 'Custom Policy', action: setupCustomPolicy },
   { name: 'Allow Privilege Escalation PSP' },
@@ -12,35 +14,30 @@ const policies = [
   { name: 'Allowed Proc Mount Types PSP' },
   { name: 'Apparmor PSP' },
   { name: 'Capabilities PSP' },
-  { name: 'Deprecated API Versions', action: setupDeprecatedAPIVersions }, // https://github.com/kubewarden/ui/issues/242 - version not required
+  { name: 'Deprecated API Versions', action: setupDeprecatedAPIVersions },
   { name: 'Disallow Service Loadbalancer' },
   { name: 'Disallow Service Nodeport' },
   { name: 'Echo' },
   { name: 'Environment Variable Secrets Scanner' },
-  { name: 'Environment Variable Policy', action: setupEnvironmentVariablePolicy }, // - at least one rule is required, UI does not check
+  { name: 'Environment Variable Policy', action: setupEnvironmentVariablePolicy },
   { name: 'Flexvolume Drivers Psp' },
   { name: 'Host Namespaces PSP' },
   { name: 'Hostpaths PSP' },
   { name: 'Ingress Policy' },
   { name: 'Pod Privileged Policy' },
-  // { name: 'Pod Runtime', action: null }, broken (empty) policy rules - https://github.com/kubewarden/pod-runtime-class-policy/issues/14
+  { name: 'Pod Runtime', skip: 'https://github.com/kubewarden/pod-runtime-class-policy/issues/14' },
   { name: 'Readonly Root Filesystem PSP' },
-  { name: 'Safe Annotations' },
+  { name: 'Safe Annotations', skip: 'https://github.com/kubewarden/ui/issues/307' },
   { name: 'Safe Labels' },
   { name: 'Seccomp PSP' },
-  { name: 'Selinux PSP', action: setupSelinuxPSP }, // https://github.com/kubewarden/ui/issues/240 - extra RunAsAny
+  { name: 'Selinux PSP', action: setupSelinuxPSP },
   { name: 'Sysctl PSP' },
-  { name: 'Trusted Repos' },
-  { name: 'User Group PSP', action: setupUserGroupPSP }, // - only one rule should be required - https://github.com/kubewarden/user-group-psp-policy/issues/45
-  { name: 'Verify Image Signatures', action: setupVerifyImageSignatures }, // - add button not workind -  - https://github.com/kubewarden/ui/issues/239 - https://github.com/kubewarden/ui/issues/237
-  { name: 'volumeMounts', action: setupVolumeMounts }, // - https://github.com/kubewarden/ui/issues/259
+  { name: 'Trusted Repos', skip: 'https://github.com/kubewarden/ui/issues/308' },
+  { name: 'User Group PSP', action: setupUserGroupPSP },
+  { name: 'Verify Image Signatures', action: setupVerifyImageSignatures },
+  { name: 'volumeMounts', action: setupVolumeMounts },
   { name: 'Volumes PSP' },
 ]
-
-const polmode   = process.env.mode || 'monitor'
-const polserver = process.env.server || 'default'
-const polkeep   = process.env.keep || false
-
 
 async function setupCustomPolicy(page) {
   await page.locator('input:near(:text("Module*"))').first().fill('ghcr.io/kubewarden/policies/pod-privileged:v0.2.4')
@@ -103,6 +100,9 @@ for (const policy of policies) {
   test(`install: ${policy.name}`, async ({ page }) => {
     const polname = 'test-' + policy.name.replace(/\s+/g, '-').toLowerCase()
 
+    // Skip broken tests
+    if (policy.skip) test.skip(true, policy.skip)
+
     await page.goto('/dashboard/c/local/kubewarden/policies.kubewarden.io.clusteradmissionpolicy/create')
     await expect(page.getByRole('heading', { name: 'Finish: Step 1' })).toBeVisible()
 
@@ -130,7 +130,6 @@ for (const policy of policies) {
         .filter({has: page.getByRole('link', {name:polname, exact: true})})
         .locator('td.col-policy-status')
       ).toHaveText('Active', {timeout: 220_000})
-
 
       // Delete policy
       await page.locator(`button[id$='+${polname}']`).click()  // id="actionButton+0+rancher-kubewarden-controller"
