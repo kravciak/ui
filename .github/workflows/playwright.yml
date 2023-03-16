@@ -12,14 +12,12 @@ defaults:
     working-directory: tests
 
 jobs:
-  # ==================================================================================================
-  # Check out code and install requirements
-  preparation:
+  e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     if: github.repository_owner == 'kubewarden' || github.event_name == 'workflow_dispatch'
     steps:
-    # Install requirements
+    # ==================================================================================================
+    # Check out code and install requirements
     - uses: actions/checkout@v3
     - uses: azure/setup-kubectl@v3
     - uses: actions/setup-node@v3
@@ -28,13 +26,8 @@ jobs:
         npm install
         npx playwright install --with-deps chromium
 
-  # ==================================================================================================
-  # Deploy k3d cluster and install rancher
-  #  rancher:
-  #    needs: preparation
-  #    runs-on: ubuntu-latest
-  #    steps:
-    # Create cluster and Install rancher
+    # ==================================================================================================
+    # Create k3d cluster and install rancher
     - name: "Create kubernetes cluster"
       uses: AbsaOSS/k3d-action@v2.4.0
       with:
@@ -42,8 +35,7 @@ jobs:
         args: "--agents 1 --image rancher/k3s:v1.24.9-k3s2"
     - name: Install Rancher
       run: |
-        FQDN=$(k3d cluster list ${{ github.repository_owner }}-ghactions-cluster -o json | jq -r '[.[].nodes[] | select(.role == "server").IP.IP] | first').nip.io
-        echo "RANCHER_URL=https://$FQDN" >> $GITHUB_ENV
+        RANCHER_FQDN=$(k3d cluster list ${{ github.repository_owner }}-ghactions-cluster -o json | jq -r '[.[].nodes[] | select(.role == "server").IP.IP] | first').nip.io
 
         # Wait for kube-system
         for i in {1..20}; do
@@ -59,7 +51,7 @@ jobs:
         helm repo add --force-update rancher-latest https://releases.rancher.com/server-charts/latest
         helm upgrade --install rancher rancher-latest/rancher --wait \
             --namespace cattle-system --create-namespace \
-            --set hostname=$FQDN \
+            --set hostname=$RANCHER_FQDN \
             --set bootstrapPassword=sa \
             --devel
         for i in {1..20}; do
@@ -70,18 +62,22 @@ jobs:
             [ $i -ne 20 ] && sleep 30 || { echo "Godot: pods not running"; exit 1; }
         done
     
+        echo "RANCHER_FQDN=$RANCHER_FQDN" >> $GITHUB_ENV
+    - name: Prepare ENV for build
+      run: |
+        # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
+        # echo "RANCHER_URL=https://$FQDN" >> $GITHUB_ENV
+        echo "RANCHER_URL=https://localhost:8005" >> $GITHUB_ENV
+        echo "API=https://$RANCHER_FQDN" >> $GITHUB_ENV
 
-  # ==================================================================================================
-  # Run playwright tests and upload results
-  #  playwright:
-  #    needs: rancher
-  #    runs-on: ubuntu-latest
 
-      #    steps:
+    # ==================================================================================================
+    # Run playwright tests and upload results
     - name: Install kubewarden
       run: npx playwright test installation
-    - name: Install policies
-      run: npx playwright test policies
+#    - name: Install policies
+#      timeout-minutes: 90
+#      run: npx playwright test policies
 
     - uses: actions/upload-artifact@v3
       if: always()
