@@ -13,9 +13,11 @@ defaults:
 
 jobs:
   # ==================================================================================================
+  # Check out code and install requirements
   preparation:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'kubewarden' || github.event_name == 'workflow_dispatch'
+    steps:
     # Install requirements
     - uses: actions/checkout@v3
     - uses: azure/setup-kubectl@v3
@@ -26,6 +28,7 @@ jobs:
         npx playwright install --with-deps chromium
 
   # ==================================================================================================
+  # Deploy k3d cluster and install rancher
   rancher:
     needs: preparation
     runs-on: ubuntu-latest
@@ -68,12 +71,13 @@ jobs:
     
 
   # ==================================================================================================
+  # Run playwright tests and upload results
   playwright:
     needs: rancher
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
-    # Run playwright tests and upload results
+    steps:
     - name: Install kubewarden
       run: npx playwright test installation
     - name: Install policies
