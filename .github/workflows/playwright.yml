@@ -12,12 +12,10 @@ defaults:
     working-directory: tests
 
 jobs:
-  playwright:
-    if: github.repository_owner == 'kubewarden' || github.event_name == 'workflow_dispatch'
-    timeout-minutes: 60
+  # ==================================================================================================
+  preparation:
     runs-on: ubuntu-latest
-    steps:
-    # ==================================================================================================
+    if: github.repository_owner == 'kubewarden' || github.event_name == 'workflow_dispatch'
     # Install requirements
     - uses: actions/checkout@v3
     - uses: azure/setup-kubectl@v3
@@ -27,7 +25,11 @@ jobs:
         npm install
         npx playwright install --with-deps chromium
 
-    # ==================================================================================================
+  # ==================================================================================================
+  rancher:
+    needs: preparation
+    runs-on: ubuntu-latest
+    steps:
     # Create cluster and Install rancher
     - name: "Create kubernetes cluster"
       uses: AbsaOSS/k3d-action@v2.4.0
@@ -63,8 +65,14 @@ jobs:
             grep -vE '([0-9]+)/\1 +Running|^$' <<< $output || break
             [ $i -ne 20 ] && sleep 30 || { echo "Godot: pods not running"; exit 1; }
         done
+    
 
-    # ==================================================================================================
+  # ==================================================================================================
+  playwright:
+    needs: rancher
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
     # Run playwright tests and upload results
     - name: Install kubewarden
       run: npx playwright test installation
