@@ -64,35 +64,19 @@ const config = {
         viewport: { width: 1600, height: 900 },
       },
     },
-
-    //    {
-    //      name: 'firefox',
-    //      use: {
-    //        ...devices['Desktop Firefox'],
-    //      },
-    //    },
-    //
-    //    {
-    //      name: 'webkit',
-    //      use: {
-    //        ...devices['Desktop Safari'],
-    //      },
-    //    },
-
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: {
-    //     channel: 'msedge',
-    //   },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: {
-    //     channel: 'chrome',
-    //   },
-    // },
   ],
+
+  /* Run your local dev server before starting the tests */
+  webServer: process.env.API ? {
+    command: 'yarn dev',
+    port: 8005,
+    ignoreHTTPSErrors: true,
+    cwd: '..',
+    timeout: 300_000,
+    env: {
+      ROUTER_BASE: '/dashboard/'
+    }
+  } : undefined
 };
 
 module.exports = config;

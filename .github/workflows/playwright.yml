@@ -69,7 +69,7 @@ jobs:
     - name: Install kubewarden
       run: npx playwright test installation
     - name: Install policies
-      run: npx playwright test policies -g 'Pod Privileged Policy'
+      run: npx playwright test policies
 
     - uses: actions/upload-artifact@v3
       if: always()

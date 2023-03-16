@@ -4,7 +4,7 @@ const { test, expect } = require('@playwright/test');
 const DEVEL = 'https://kubewarden.github.io/ui' // use rc-builds REPO
 
 test('00 first run', async({ page }) => {
-  await page.goto('/');
+  await page.goto('/dashboard');
 
   // login
   await page.locator('input[type=password]').fill('sa');
