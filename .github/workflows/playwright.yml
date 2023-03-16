@@ -20,6 +20,7 @@ jobs:
     - name: Install playwright
       working-directory: tests
       run: |
+        echo ${{ github.ref_name }}
         npm install
         npx playwright install --with-deps chromium
 
@@ -65,7 +66,7 @@ jobs:
         yarn install --ignore-engines
         # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
         # echo "RANCHER_URL=https://$FQDN" >> $GITHUB_ENV
-        yq --arg git (git rev-parse --short HEAD) -e -i -y '.kubewarden.dashboard.intro += " " + $git' pkg/kubewarden/l10n/en-us.yaml
+        yq --arg git $(git rev-parse --short HEAD) -e -i -y '.kubewarden.dashboard.intro += " " + $git' pkg/kubewarden/l10n/en-us.yaml
         echo "RANCHER_URL=https://localhost:8005" >> $GITHUB_ENV
         echo "API=https://$RANCHER_FQDN" >> $GITHUB_ENV
 
