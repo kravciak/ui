@@ -20,7 +20,6 @@ jobs:
     - name: Install playwright
       working-directory: tests
       run: |
-        echo ${{ github.ref_name }}
         npm install
         npx playwright install --with-deps chromium
 
@@ -61,12 +60,20 @@ jobs:
         done
     
         echo "RANCHER_FQDN=$RANCHER_FQDN" >> $GITHUB_ENV
+
+    - name: Patch git ref name into dashboard
+      uses: mikefarah/yq@master
+      with:
+        cmd: yq -i '.kubewarden.dashboard.intro += "(" + ${{ github.ref_name }} + ")"' pkg/kubewarden/l10n/en-us.yaml
+
     - name: Prepare ENV for build
       run: |
         yarn install --ignore-engines
         # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
         # echo "RANCHER_URL=https://$FQDN" >> $GITHUB_ENV
-        yq --arg git $(git rev-parse --short HEAD) -e -i -y '.kubewarden.dashboard.intro += " " + $git' pkg/kubewarden/l10n/en-us.yaml
+        # yq --arg git $(git rev-parse --short HEAD) -e -i -y '.kubewarden.dashboard.intro += " " + $git' pkg/kubewarden/l10n/en-us.yaml
+        #cmd: yq '.kubewarden.dashboard.intro += " " + "$(pwd)"' pkg/kubewarden/l10n/en-us.yaml | grep intro
+        #yq -i '.kubewarden.dashboard.intro += " " + ${{ github.ref_name }}' pkg/kubewarden/l10n/en-us.yaml
         echo "RANCHER_URL=https://localhost:8005" >> $GITHUB_ENV
         echo "API=https://$RANCHER_FQDN" >> $GITHUB_ENV
 
