@@ -1,7 +1,37 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
+const jsyaml = require('js-yaml');
+const merge = require('lodash.merge');
 
-const DEVEL = 'https://kubewarden.github.io/ui' // use rc-builds REPO
+const DEVEL = process.env.DEVEL || true // use rc-builds REPO
+
+
+/**
+ * @param {import('@playwright/test').Page} page
+ *
+ * Use:
+ * await editYaml(page, d => d.telemetry.enabled = true )
+ * await editYaml(page, '{"policyServer": {"telemetry": { "enabled": false }}}')
+ */
+async function editYaml(page, source) {
+  const lines = await page.locator('.CodeMirror-code > div > pre.CodeMirror-line').allTextContents();
+
+  let cmYaml = jsyaml.load(lines.join('\n')
+    .replace(/\u00a0/g, " ")  // replace &nbsp; with space
+    .replace(/\u200b/g, "")   // remove ZERO WIDTH SPACE last line
+  );
+
+  if (source instanceof Function) {
+    source(cmYaml)
+  } else {
+    merge(cmYaml, jsyaml.load(source))
+  }
+
+  await page.locator('.CodeMirror-code').click()
+  await page.keyboard.press('Control+A');
+  await page.keyboard.insertText(jsyaml.dump(cmYaml))
+}
+
 
 test('00 first run', async({ page }) => {
   await page.goto('/dashboard');
@@ -49,7 +79,7 @@ test('02 add devel repository', async({ page }) => {
   await page.goto('/dashboard/c/local/apps/catalog.cattle.io.clusterrepo/create')
   // Add kw extension repository
   await page.getByPlaceholder('A unique name').fill('kubewarden-charts-devel');
-  await page.getByPlaceholder('e.g. https://charts.rancher.io').fill(DEVEL);
+  await page.getByPlaceholder('e.g. https://charts.rancher.io').fill('https://kubewarden.github.io/ui');
   await page.getByRole('button', { name: 'Create' }).click();
 
   // Check repository state is Active
@@ -89,8 +119,13 @@ test('03 install kubewarden', async({ page }) => {
   }
   await page.getByRole('button', { name: 'Install Kubewarden' }).click();
   await expect(page.getByRole('heading', { name: 'Install: Step 1' })).toBeVisible();
-
   await page.getByRole('button', { name: 'Next' }).click();
+
+  // Enable telemetry
+  // await page.getByRole('button', { name: 'Edit YAML' }).click()
+  // await editYaml(page, d => d.telemetry.enabled = true )
+  // await page.getByRole('button', { name: 'Compare Changes' }).click()
+
   await page.getByRole('button', { name: 'Install' }).click();
   await expect(page.locator('#windowmanager').getByText(/SUCCESS: helm upgrade .* rancher-kubewarden-crds/)).toBeVisible({timeout:30_000})
   await expect(page.locator('#windowmanager').getByText(/SUCCESS: helm upgrade .* rancher-kubewarden-controller/)).toBeVisible({timeout:60_000})
@@ -118,8 +153,13 @@ test('04 install default policyserver', async({ page }) => {
 
   await page.getByRole('button', { name: 'Next' }).click()
   await page.getByRole('checkbox', { name: 'Enable recommended policies' }).check()
-  await page.getByRole('button', { name: 'Install' }).click();
 
+  // Enable telemetry
+  // await page.getByRole('button', { name: 'Edit YAML' }).click()
+  // await editYaml(page, d => d.policyServer.telemetry.enabled = true)
+  // await page.getByRole('button', { name: 'Compare Changes' }).click()
+
+  await page.getByRole('button', { name: 'Install' }).click();
   await expect(page.locator('#windowmanager').getByText(/SUCCESS: helm upgrade .* rancher-kubewarden-defaults/)).toBeVisible({timeout:40_000})
   // wait for policy server?
 });
@@ -134,7 +174,7 @@ test('05 whitelist artifacthub', async({ page }) => {
   await page.getByRole('button', { name: 'Add ArtifactHub To Whitelist' }).click();
   
   await expect(page.getByRole('heading', { name: 'Pod Privileged Policy' })).toBeVisible()
-  await expect(page.locator(".subtype >> nth=25")).toBeVisible() // we have now 27+1 policies
+  await expect(page.locator(".subtype")).toHaveCount(29) // we have 28 + 1 custom
 });
 
 test('06 disable namespace filter', async({ page }) => {
