@@ -5,7 +5,7 @@ kubewarden:
     install: Install
     notInstalled: Kubewarden is not installed
     button: Install Kubewarden Prerequisites
-    intro: WWelcome to Kubewarden
+    intro: YWelcome to Kubewarden
     blurb: A Dynamic Admission Controller for Kubernetes
     description: |
       Kubewarden is a policy engine for Kubernetes. It helps with keeping your Kubernetes clusters secure and compliant. Kubewarden policies can be written using regular programming languages or Domain Specific Languages (DSL). Policies are compiled into WebAssembly modules that are then distributed using traditional container registries.
