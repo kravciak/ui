@@ -2,24 +2,45 @@ name: Playwright Tests
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*'
+
+  pull_request:
+    branches: main
+    paths: pkg/kubewarden/**
+
+#  push:
+#    tags:
+#      - '*'
+#    branches:
+#      - main
+#    paths:
+#      - pkg/kubewarden/**
+
   schedule:
     - cron: "0 2 * * *"
 
 jobs:
   e2e:
+    if: github.repository_owner == 'kubewarden' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'kubewarden' || github.event_name == 'workflow_dispatch'
     steps:
+    # ==================================================================================================
+    # source: head (manual|nightly) | PR (only on pr, quick check) | tags (full check) 
+    # build = pr | head | ...
+    - name: Setup ENV
+      run: |
+        if [[ github.event_name == 'pull_request' ]]; then
+          echo "KW_SOURCE=build" >> $GITHUB_ENV
+        else
+          echo "KW_SOURCE=tag" >> $GITHUB_ENV
+        fi
+
     # ==================================================================================================
     # Check out code and install requirements
     - uses: actions/checkout@v3
     - uses: azure/setup-kubectl@v3
     - uses: actions/setup-node@v3
-    # FIXME: only on dev
     - name: Install dev dependencies
+      if: env.KW_SOURCE == 'build'
       run: yarn install --ignore-engines
     - name: Install playwright
       working-directory: tests
@@ -70,18 +91,27 @@ jobs:
       with:
         cmd: yq -i '.kubewarden.dashboard.intro += "(${{ github.ref_name }})"' pkg/kubewarden/l10n/en-us.yaml
 
-    - name: Prepare ENV for build
-      run: |
-        # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
-        echo "RANCHER_URL=https://localhost:8005" >> $GITHUB_ENV
-        echo "API=https://$RANCHER_FQDN" >> $GITHUB_ENV
-
-
     # ==================================================================================================
     # Run playwright tests and upload results
-    - name: Install kubewarden
+    # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
+    - name: Install kubewarden from yarn
+      if: env.KW_SOURCE == build
       working-directory: tests
-      run: npx playwright test installation -gv 0[12]
+      env:
+        RANCHER_URL: 'https://localhost:8005'
+        API: https://$RANCHER_FQDN
+      run: |
+        npx playwright test installation -gv 0[12]
+
+    - name: Install kubewarden from tag
+      if: env.KW_SOURCE == tag
+      working-directory: tests
+      env:
+        RANCHER_URL: https://$RANCHER_FQDN
+      run: |
+        npx playwright test installation
+
+
 #    - name: Install policies
 #      timeout-minutes: 90
 #      run: npx playwright test policies
