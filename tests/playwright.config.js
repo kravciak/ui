@@ -71,7 +71,7 @@ const config = {
     command: 'yarn dev',
     port: 8005,
     ignoreHTTPSErrors: true,
-    cwd: '..',
+    cwd: '../',
     timeout: 300_000,
     env: {
       ROUTER_BASE: '/dashboard/',

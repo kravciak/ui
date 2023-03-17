@@ -131,7 +131,6 @@ for (const policy of policies) {
         .locator('td.col-policy-status')
       ).toHaveText('Active', {timeout: 220_000})
 
-
       // Delete policy
       await page.locator(`button[id$='+${polname}']`).click()  // id="actionButton+0+rancher-kubewarden-controller"
       await page.getByRole('listitem').getByText('Delete').click()
