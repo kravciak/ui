@@ -81,7 +81,7 @@ jobs:
     # Run playwright tests and upload results
     - name: Install kubewarden
       working-directory: tests
-      run: npx playwright test installation -gv 0[12] -g 00
+      run: npx playwright test installation -gv 0[12]
 #    - name: Install policies
 #      timeout-minutes: 90
 #      run: npx playwright test policies
