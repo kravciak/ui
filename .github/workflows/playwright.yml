@@ -95,7 +95,7 @@ jobs:
     # Run playwright tests and upload results
     # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
     - name: Install kubewarden from yarn
-      if: env.KW_SOURCE == build
+      if: env.KW_SOURCE == 'build'
       working-directory: tests
       env:
         RANCHER_URL: 'https://localhost:8005'
@@ -104,7 +104,7 @@ jobs:
         npx playwright test installation -gv 0[12]
 
     - name: Install kubewarden from tag
-      if: env.KW_SOURCE == tag
+      if: env.KW_SOURCE == 'tag'
       working-directory: tests
       env:
         RANCHER_URL: https://$RANCHER_FQDN
