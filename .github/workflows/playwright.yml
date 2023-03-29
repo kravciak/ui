@@ -2,6 +2,39 @@ name: Playwright Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      rancher:
+        type: choice
+        default: 'rc'
+        description: Use 2.7.X-rcX (rc) or 2.7.X (released)
+        required: true
+        options:
+        - rc
+        - released
+      kubewarden:
+        type: choice
+        default: 'rc'
+        required: true
+        options:
+        - head
+        - rc
+        - released
+      testsuite:
+        type: choice
+        default: 'install'
+        required: true
+        options:
+        - install
+        - + ui tests
+        - + policies
+        - everything
+      environment:
+        description: 'Environment to run tests against'
+        type: environment
+        required: true
+
+# rancher: head|rc|released | v2.7.1 | v2.7.2-rc7
+# kubewarden: head|released | tag#1.0.4-rc2 | pr#xxx | v#1.0.3
 
   pull_request:
     branches: main
@@ -24,11 +57,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # ==================================================================================================
-    # source: head (manual|nightly) | PR (only on pr, quick check) | tags (full check) 
+    # source: head (manual|nightly) | PR (only on pr, quick check) | tags (full check)
     # build = pr | head | ...
     - name: Setup ENV
       run: |
+        //case ${{github.event_name}} in
+        //  pull_request)
+        //    ;;
+        //  schedule)
+        //    ;;
+        //  schedule)
+        //    ;;
+        //  workflow_dispatch)
+        //    ;;
+        //  *)
+        //    ;;
+        //esac
+     
         if [[ ${{github.event_name}} == 'pull_request' ]]; then
+          RANCHER=devel
+          KUBEWARDEN=code
+          TESTS=short
+        fi
+
+        if [[ ${{github.event_name}} == 'schedule' ]]; then
+          RANCHER=devel
+          KUBEWARDEN=code
+          TESTS=short
           echo "KW_SOURCE=build" >> $GITHUB_ENV
         else
           echo "KW_SOURCE=tag" >> $GITHUB_ENV
