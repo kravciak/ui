@@ -2,39 +2,34 @@ name: Playwright Tests
 
 on:
   workflow_dispatch:
-    inputs:
-      rancher:
-        type: choice
-        default: 'rc'
-        description: Use 2.7.X-rcX (rc) or 2.7.X (released)
-        required: true
-        options:
-        - rc
-        - released
-      kubewarden:
-        type: choice
-        default: 'rc'
-        required: true
-        options:
-        - head
-        - rc
-        - released
-      testsuite:
-        type: choice
-        default: 'install'
-        required: true
-        options:
-        - install
-        - + ui tests
-        - + policies
-        - everything
-      environment:
-        description: 'Environment to run tests against'
-        type: environment
-        required: true
-
-# rancher: head|rc|released | v2.7.1 | v2.7.2-rc7
-# kubewarden: head|released | tag#1.0.4-rc2 | pr#xxx | v#1.0.3
+#    inputs:
+#      # head | rc | released | v2.7.1 | v2.7.2-rc7
+#      rancher:
+#        type: choice
+#        default: 'rc'
+#        description: Use 2.7.X-rcX (rc) or 2.7.X (released)
+#        required: true
+#        options:
+#        - rc
+#        - released
+#      # head | released | tag#1.0.4-rc2 | pr#xxx | v#1.0.3
+#      kubewarden:
+#        type: choice
+#        default: 'head'
+#        required: true
+#        options:
+#        - head
+#        - rc
+#        - released
+#      testsuite:
+#        type: choice
+#        default: 'install'
+#        required: true
+#        options:
+#        - install
+#        #- install + ui tests
+#        - install + policies
+#        #- install + everything
 
   pull_request:
     branches: main
@@ -51,14 +46,18 @@ on:
   schedule:
     - cron: "0 2 * * *"
 
+# env:
+#   RANCHER: ${{ github.event.inputs.RANCHER || "latest" }}
+#   KUBEWARDEN: ${{ github.event.inputs.KUBEWARDEN }}
+#   TESTS: ${{ github.event.inputs.TESTS }}
+
 jobs:
   e2e:
+    # run schedule workflows only on kubewarden repo, not forks
     if: github.repository_owner == 'kubewarden' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
     # ==================================================================================================
-    # source: head (manual|nightly) | PR (only on pr, quick check) | tags (full check)
-    # build = pr | head | ...
     - name: Setup ENV
       run: |
         //case ${{github.event_name}} in
@@ -73,18 +72,20 @@ jobs:
         //  *)
         //    ;;
         //esac
-     
+
+        if [[ ${{github.event_name}} == 'workflow_dispatch' ]]; then
+          RANCHER=${{ inputs.RANCHER }} >> $GITHUB_ENV
+          KUBEWARDEN=${{ inputs.kubewarden }} >> $GITHUB_ENV
+        fi
+
         if [[ ${{github.event_name}} == 'pull_request' ]]; then
-          RANCHER=devel
-          KUBEWARDEN=code
-          TESTS=short
+          RANCHER=devel >> $GITHUB_ENV
+          KUBEWARDEN=source >> $GITHUB_ENV
         fi
 
         if [[ ${{github.event_name}} == 'schedule' ]]; then
-          RANCHER=devel
-          KUBEWARDEN=code
-          TESTS=short
-          echo "KW_SOURCE=build" >> $GITHUB_ENV
+          RANCHER=devel >> $GITHUB_ENV
+          KUBEWARDEN=source >> $GITHUB_ENV
         else
           echo "KW_SOURCE=tag" >> $GITHUB_ENV
         fi
@@ -95,7 +96,7 @@ jobs:
     - uses: azure/setup-kubectl@v3
     - uses: actions/setup-node@v3
     - name: Install dev dependencies
-      if: env.KW_SOURCE == 'build'
+      if: env.KUBEWARDEN == 'source'
       run: yarn install --ignore-engines
     - name: Install playwright
       working-directory: tests
@@ -144,8 +145,8 @@ jobs:
     # ==================================================================================================
     # Run playwright tests and upload results
     # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
-    - name: Install kubewarden from yarn
-      if: env.KW_SOURCE == 'build'
+    - name: Install kubewarden (${{env.KUBEWARDEN}})
+      if: env.KUBEWARDEN == 'source'
       working-directory: tests
       env:
         RANCHER_URL: https://localhost:8005
@@ -153,8 +154,16 @@ jobs:
       run: |
         npx playwright test installation -gv 0[12] -x
 
-    - name: Install kubewarden from tag
-      if: env.KW_SOURCE == 'tag'
+    - name: Install kubewarden (${{env.KUBEWARDEN}})
+      if: env.KUBEWARDEN == 'rc'
+      working-directory: tests
+      env:
+        RANCHER_URL: https://${{env.RANCHER_FQDN}}
+      run: |
+        npx playwright test installation -x
+
+    - name: Install kubewarden (${{env.KUBEWARDEN}})
+      if: env.KUBEWARDEN == 'released'
       working-directory: tests
       env:
         RANCHER_URL: https://${{env.RANCHER_FQDN}}
@@ -162,10 +171,17 @@ jobs:
         npx playwright test installation -x
 
 
-#    - name: Install policies
-#      timeout-minutes: 90
-#      run: npx playwright test policies
+    - name: Install policies
+      if: github.event_name != 'schedule'
+      timeout-minutes: 90
+      working-directory: tests
+      env:
+        RANCHER_URL: https://${{env.RANCHER_FQDN}}
+      run: |
+        npx playwright test policies -g 'Pod Privileged Policy'
 
+    # ==================================================================================================
+    # Artifacts & Summary
     - uses: actions/upload-artifact@v3
       if: always()
       with:
