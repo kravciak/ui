@@ -1,4 +1,5 @@
 # Kubewarden Extension for Rancher Manager
+# PR 10
 
 An extension for Rancher Manager (v2.7.0) which allows you to interact with Kubewarden.
 
