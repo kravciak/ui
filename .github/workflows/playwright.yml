@@ -73,12 +73,12 @@ jobs:
       run: |
         case ${{github.event_name}} in
           pull_request)
-            RANCHER=rc
+            RANCHER=${{ vars.RANCHER || 'rc' }}
             KUBEWARDEN=source
             TESTSUITE=install
             ;;
           schedule)
-            RANCHER=rc
+            RANCHER=${{ vars.RANCHER || 'rc' }}
             KUBEWARDEN=released
             TESTSUITE=policies
             ;;
@@ -88,7 +88,7 @@ jobs:
             TESTSUITE="${{ inputs.testsuite }}"
             ;;
           push)
-            RANCHER=released
+            RANCHER=${{ vars.RANCHER || 'rc' }}
             KUBEWARDEN=rc
             TESTSUITE=policies
         esac
