@@ -1,7 +1,7 @@
 kubewarden:
   title: Kubewarden
   dashboard:
-    title: Dashboardz
+    title: Dashboardq
     install: Install
     notInstalled: Kubewarden is not installed
     button: Install Kubewarden Prerequisites
