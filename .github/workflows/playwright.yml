@@ -62,7 +62,7 @@ on:
       - '*'
 
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "07 * * * *"
 
 env:
   # Github -> Secrets and variables -> Actions -> New repository variable
@@ -80,7 +80,7 @@ jobs:
       matrix:
         mode: ${{ github.event_name == 'schedule' && fromJSON('["base", "upgrade", "fleet"]') || fromJSON(format('["{0}"]', inputs.mode || 'base')) }}
     # Run schedule workflows only on original repo, not forks
-    if: github.repository_owner == 'rancher' || github.event_name != 'schedule'
+    if: github.repository_owner == 'rancher' || github.event_name != 'schedule' || github.repository_owner == 'kravciak'
     runs-on: self-hosted
     steps:
     # ==================================================================================================
@@ -137,6 +137,7 @@ jobs:
         args: "--agents 1 --image rancher/k3s:${{ env.K3S_VERSION }}"
 
     - name: Install Rancher
+      if: ${{ false }}
       run: |
         RANCHER_FQDN=$(k3d cluster list ${{ env.K3D_CLUSTER_NAME }} -o json | jq -r '[.[].nodes[] | select(.role == "server").IP.IP] | first').nip.io
 
@@ -214,7 +215,7 @@ jobs:
 
         # List tests and execute
         echo yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x
-        yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x
+        yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x --list
       env:
         MODE: ${{ matrix.mode }}
         RANCHER_URL: https://${{env.RANCHER_FQDN}}
