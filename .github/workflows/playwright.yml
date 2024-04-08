@@ -82,7 +82,9 @@ jobs:
         mode: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run' ) && fromJSON('["base", "upgrade", "fleet"]') || fromJSON(format('["{0}"]', inputs.mode || 'base')) }}
         rancher: ${{ github.event_name == 'schedule' && fromJSON('["2.7-0", "2.8-0"]') || (github.event_name == 'workflow_run' && fromJSON('["2.7", "2.8"]') || fromJSON(format('["{0}"]', inputs.rancher || 'released' ))) }}
     # Run schedule workflows only on original repo, not forks
-    if: github.repository_owner == 'rancher' || github.event_name != 'schedule' || github.repository_owner == 'kravciak'
+    if: |
+      (github.event_name != 'schedule' || github.repository_owner == 'rancher' ) &&
+      (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: self-hosted
     steps:
     # ==================================================================================================
