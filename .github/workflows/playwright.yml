@@ -224,7 +224,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report-${{ matrix.mode }}
+        name: playwright-report-${{ matrix.mode }}-${{ matrix.rancher }}
         path: tests/playwright-report/
         retention-days: 15
 
