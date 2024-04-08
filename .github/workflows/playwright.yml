@@ -58,8 +58,10 @@ on:
     paths: pkg/kubewarden/**
 
   push:
-    tags:
-      - '*'
+    tags: ['*']
+
+  release:
+    types: [published]
 
   schedule:
     - cron: "0 1 * * *"
@@ -78,7 +80,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: ${{ github.event_name == 'schedule' && fromJSON('["base", "upgrade", "fleet"]') || fromJSON(format('["{0}"]', inputs.mode || 'base')) }}
+        mode: ${{ (github.event_name == 'schedule' || github.event_name == 'release' ) && fromJSON('["base", "upgrade", "fleet"]') || fromJSON(format('["{0}"]', inputs.mode || 'base')) }}
+        rancher: ${{ github.event_name == 'schedule' && fromJSON('["2.7-0", "2.8-0"') || github.event_name == 'release' && fromJSON('["2.7", "2.8"') || fromJSON(format('["{0}"]', inputs.rancher || 'released' )) }}
     # Run schedule workflows only on original repo, not forks
     if: github.repository_owner == 'rancher' || github.event_name != 'schedule'
     runs-on: self-hosted
@@ -110,9 +113,11 @@ jobs:
             ;;
           schedule)
             KUBEWARDEN=released
-            TESTPOLICIES=true
             ;;
           push)
+            KUBEWARDEN=rc
+            ;;
+          release)
             KUBEWARDEN=rc
             TESTPOLICIES=true
         esac
@@ -192,25 +197,17 @@ jobs:
       timeout-minutes: 120
       working-directory: tests
       run: |
-        TFILTER="\/00" # Installation tests
-        [[ "$TESTBASE" == "true" ]] && TFILTER+=" \/[1-8]"
-        [[ "$TESTPOLICIES" == "true" ]] && TFILTER+=" \/90"
-
         # Policy tests are hitting artifacthub rate limits
         # Filter to exclude policies except those starting with random letter
         EXCLUDE=$(yarn playwright test "/90-" --list | grep -o 'install: .' | cut -d' ' -f2 | sort -fRu | sed 1d | paste -sd '')
         EXCLUDE="90-.*install: [$EXCLUDE]"
 
-        # Add few random policies to base tests
-        if [[ "$TESTBASE" == "true" && "$TESTPOLICIES" != "true" ]]; then
-          TFILTER+=" \/90"
-          GFILTER="$EXCLUDE"
-        fi
+        TFILTER="\/00"                                        # Always run installation tests
+        [[ "$TESTBASE" == "true" ]] && TFILTER+=" \/[1-9]"    # Schedule everything else as base test
+        [[ "$TESTPOLICIES" != "true" ]] && GFILTER="$EXCLUDE" # Limit policies executed in base tests
 
-        # Use policy filter on automated runs in extra install modes
-        if [[ "${{github.event_name}}" != "workflow_dispatch" && "${{matrix.mode}}" != "base" ]]; then
-          GFILTER="$EXCLUDE"
-        fi
+        # Limit policies on additional modes
+        [[ "${{github.event_name}}" == "release" && "${{matrix.mode}}" != "base" ]] && GFILTER="$EXCLUDE"
 
         # List tests and execute
         echo yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x
