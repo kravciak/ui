@@ -57,11 +57,10 @@ on:
     branches: main
     paths: pkg/kubewarden/**
 
-  push:
-    tags: ['*']
-
-  release:
-    types: [released]
+  workflow_run:
+    workflows: ["Build and Release Extension Charts"]
+    types:
+      - completed
 
   schedule:
     - cron: "07 * * * *"
@@ -80,8 +79,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: ${{ (github.event_name == 'schedule' || github.event_name == 'release' ) && fromJSON('["base", "upgrade", "fleet"]') || fromJSON(format('["{0}"]', inputs.mode || 'base')) }}
-        rancher: ${{ github.event_name == 'schedule' && fromJSON('["2.7-0", "2.8-0"]') || (github.event_name == 'release' && fromJSON('["2.7", "2.8"]') || fromJSON(format('["{0}"]', inputs.rancher || 'released' ))) }}
+        mode: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_run' ) && fromJSON('["base", "upgrade", "fleet"]') || fromJSON(format('["{0}"]', inputs.mode || 'base')) }}
+        rancher: ${{ github.event_name == 'schedule' && fromJSON('["2.7-0", "2.8-0"]') || (github.event_name == 'workflow_run' && fromJSON('["2.7", "2.8"]') || fromJSON(format('["{0}"]', inputs.rancher || 'released' ))) }}
     # Run schedule workflows only on original repo, not forks
     if: github.repository_owner == 'rancher' || github.event_name != 'schedule' || github.repository_owner == 'kravciak'
     runs-on: self-hosted
@@ -114,12 +113,8 @@ jobs:
           schedule)
             KUBEWARDEN=released
             ;;
-          push)
+          workflow_run)
             KUBEWARDEN=rc
-            ;;
-          release)
-            KUBEWARDEN=rc
-            TESTPOLICIES=true
         esac
 
         # KW extension is prime since 2.8.3
@@ -207,10 +202,12 @@ jobs:
 
         TFILTER="\/00"                                        # Always run installation tests
         [[ "$TESTBASE" == "true" ]] && TFILTER+=" \/[1-9]"    # Schedule everything else as base test
-        [[ "$TESTPOLICIES" != "true" ]] && GFILTER="$EXCLUDE" # Limit policies executed in base tests
+        # [[ "$TESTPOLICIES" != "true" ]] && GFILTER="$EXCLUDE" # Limit policies executed in base tests
 
-        # Limit policies on additional modes
-        [[ "${{github.event_name}}" == "release" && "${{matrix.mode}}" != "base" ]] && GFILTER="$EXCLUDE"
+        # Limit number of tested policies
+        [[ "${{inputs.testpolicies}}" != "true" ]] && GFILTER="$EXCLUDE"
+        # [[ "{{github.event_name}}" != "workflow_dispatch" && "{{inputs.testpolicies}}" != "true" ]] && GFILTER="$EXCLUDE"
+        # [[ "{{github.event_name}}" == "workflow_dispatch" && "$TESTPOLICIES" == "true" ]] || GFILTER="$EXCLUDE"
 
         # List tests and execute
         echo yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x
