@@ -64,7 +64,7 @@ on:
     types: [published]
 
   schedule:
-    - cron: "0 1 * * *"
+    - cron: "37 * * * *"
 
 env:
   # Github -> Secrets and variables -> Actions -> New repository variable
