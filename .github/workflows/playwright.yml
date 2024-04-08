@@ -60,8 +60,10 @@ on:
   push:
     tags: ['*']
 
-  release:
-    types: [released]
+  workflow_run:
+    workflows: ["Build and Release Extension Charts"]
+    types:
+      - completed
 
   schedule:
     - cron: "07 * * * *"
@@ -81,7 +83,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: ${{ (github.event_name == 'schedule' || github.event_name == 'release' ) && fromJSON('["base", "upgrade", "fleet"]') || fromJSON(format('["{0}"]', inputs.mode || 'base')) }}
-        rancher: ${{ github.event_name == 'schedule' && fromJSON('["2.7-0", "2.8-0"]') || (github.event_name == 'release' && fromJSON('["2.7", "2.8"]') || fromJSON(format('["{0}"]', inputs.rancher || 'released' ))) }}
+        rancher: ${{ github.event_name == 'schedule' && fromJSON('["2.7-0", "2.8-0"]') || (github.event_name == 'workflow_run' && fromJSON('["2.7", "2.8"]') || fromJSON(format('["{0}"]', inputs.rancher || 'released' ))) }}
     # Run schedule workflows only on original repo, not forks
     if: github.repository_owner == 'rancher' || github.event_name != 'schedule' || github.repository_owner == 'kravciak'
     runs-on: self-hosted
