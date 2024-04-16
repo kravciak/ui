@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directory: "/tests"
+    directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
