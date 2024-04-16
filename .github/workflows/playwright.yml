@@ -74,7 +74,7 @@ env:
   TESTBASE: ${{ github.event_name != 'workflow_dispatch' && true || inputs.testbase }}
   TESTPOLICIES: ${{ inputs.testpolicies || false }}
   # Enable QASE integration only for original repo
-  QASE: ${{ github.repository_owner == 'rancher' }}
+  QASE: ${{ github.repository_owner == 'kravciak' }}
 
 defaults:
   run:
@@ -237,7 +237,7 @@ jobs:
       with:
         name: QASE_RUN_ID-${{ matrix.mode }}-${{ matrix.rancher }}
         run_id: ${{ github.run_id }}
-        # if_no_artifact_found: ignore
+        if_no_artifact_found: ignore
         workflow_conclusion: completed
         allow_forks: false
 
