@@ -76,7 +76,7 @@ env:
   TESTBASE: ${{ github.event_name != 'workflow_dispatch' && true || inputs.testbase }}
   TESTPOLICIES: ${{ inputs.testpolicies || false }}
   # Enable QASE integration only for original repo
-  QASE: ${{ github.repository_owner == 'rancher' && github.event_name != 'pull_request' }}
+  QASE: ${{ github.repository_owner == 'kravciak' && github.event_name != 'pull_request' }}
 
 defaults:
   run:
