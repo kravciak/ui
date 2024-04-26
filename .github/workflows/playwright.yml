@@ -218,6 +218,8 @@ jobs:
         [[ "$TESTBASE" == "true" ]] && TFILTER+=" \/[1-9]"    # Schedule everything else as base test
         [[ "$TESTPOLICIES" != "true" ]] && GFILTER="$EXCLUDE" # Limit number of tested policies
 
+        echo "QASE: $QASE"
+
         # List tests and execute
         echo yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x
         yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x --list | tee qase-report.log
