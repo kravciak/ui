@@ -218,6 +218,7 @@ jobs:
         [[ "$TESTBASE" == "true" ]] && TFILTER+=" \/[1-9]"    # Schedule everything else as base test
         [[ "$TESTPOLICIES" != "true" ]] && GFILTER="$EXCLUDE" # Limit number of tested policies
 
+        echo "QASE: $QASE"
         echo "QASE_REPORT: $QASE_REPORT"
 
         # List tests and execute
@@ -227,7 +228,7 @@ jobs:
         MODE: ${{ matrix.mode }}
         RANCHER_URL: https://${{ env.RANCHER_FQDN }}
         ORIGIN: ${{ env.KUBEWARDEN }}
-        QASE_REPORT: ${{ env.QASE && '1' || '' }} # Pass 'false' as ''
+        QASE_REPORT: ${{ env.QASE == true || '' }} # Pass 'false' as ''
         QASE_APITOKEN: ${{ secrets.QASE_APITOKEN }}
         QASE_RUN_NAME: "Run[${{github.event_name}}]: UI[${{ env.KUBEWARDEN }}] - MODE[${{ matrix.mode }}] - RANCHER[${{ matrix.rancher }}] "
         QASE_RUN_DESCRIPTION: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
