@@ -76,7 +76,7 @@ env:
   TESTBASE: ${{ github.event_name != 'workflow_dispatch' && true || inputs.testbase }}
   TESTPOLICIES: ${{ inputs.testpolicies || false }}
   # Enable QASE integration only for original repo
-  QASE: ${{ github.repository_owner == 'rancher' && github.event_name != 'pull_request'}}
+  QASE: ${{ github.repository_owner == 'rancher' && github.event_name != 'pull_request' }}
 
 defaults:
   run:
@@ -224,7 +224,7 @@ jobs:
         MODE: ${{ matrix.mode }}
         RANCHER_URL: https://${{ env.RANCHER_FQDN }}
         ORIGIN: ${{ env.KUBEWARDEN }}
-        QASE_REPORT: ${{ env.QASE }}
+        QASE_REPORT: ${{ env.QASE || '' }} # Pass 'false' as ''
         QASE_APITOKEN: ${{ secrets.QASE_APITOKEN }}
         QASE_RUN_NAME: "Run[${{github.event_name}}]: UI[${{ env.KUBEWARDEN }}] - MODE[${{ matrix.mode }}] - RANCHER[${{ matrix.rancher }}] "
         QASE_RUN_DESCRIPTION: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
