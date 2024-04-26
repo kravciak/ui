@@ -218,7 +218,7 @@ jobs:
         [[ "$TESTBASE" == "true" ]] && TFILTER+=" \/[1-9]"    # Schedule everything else as base test
         [[ "$TESTPOLICIES" != "true" ]] && GFILTER="$EXCLUDE" # Limit number of tested policies
 
-        echo "QASE: $QASE"
+        echo "QASE_REPORT: $QASE_REPORT"
 
         # List tests and execute
         echo yarn playwright test ${TFILTER:-} ${GFILTER:+-gv "$GFILTER"} -x
