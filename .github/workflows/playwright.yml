@@ -98,7 +98,7 @@ jobs:
 
     # Run schedule workflows only on original repo, not forks
     if: |
-      (github.event_name != 'schedule' || github.repository_owner == 'rancher') &&
+      (github.event_name != 'schedule' || github.repository_owner == 'kravciak') &&
       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
     runs-on: self-hosted
     steps:
