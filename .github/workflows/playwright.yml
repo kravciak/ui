@@ -65,7 +65,7 @@ on:
       - completed
 
   schedule:
-    - cron: "57 * * * *"
+    - cron: "17 * * * *"
 
 env:
   # Github -> Secrets and variables -> Actions -> New repository variable
