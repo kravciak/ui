@@ -167,7 +167,7 @@ jobs:
         done
 
         # Wait for cert-manager
-        kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.11.0/cert-manager.yaml
+        kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.1/cert-manager.yaml
         kubectl wait --for=condition=Available deployment --timeout=2m -n cert-manager --all
 
         # Translate to sematic version
