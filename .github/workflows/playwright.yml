@@ -210,7 +210,7 @@ jobs:
 
         echo "RANCHER_FQDN=$RANCHER_FQDN" | tee -a $GITHUB_ENV
       env:
-        RANCHER: ${{ matrix.rancher }}
+        RANCHER: ${{ matrix.rancher || env.RANCHER}}
 
     # ==================================================================================================
     # Setup playwright ENV and run tests
