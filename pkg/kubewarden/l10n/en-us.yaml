@@ -5,7 +5,7 @@ kubewarden:
   generic:
     name: Name
   dashboard:
-    title: Dashboard
+    title: Dashboards
     install: Install
     notInstalled: Kubewarden is not installed
     button: Install Kubewarden Prerequisites
