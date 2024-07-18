@@ -186,6 +186,11 @@ jobs:
         helm repo add --force-update rancher-latest https://releases.rancher.com/server-charts/latest
         helm repo add --force-update rancher-alpha https://releases.rancher.com/server-charts/alpha
         helm repo add --force-update rancher-prime https://charts.rancher.com/server-charts/prime
+
+        echo "RANCHER: $RANCHER"
+        echo "REPO: $REPO"
+        echo "helm search repo $REPO/rancher ${RANCHER:+--version "$RANCHER"}"
+
         helm search repo $REPO/rancher ${RANCHER:+--version "$RANCHER"}
         helm upgrade --install rancher $REPO/rancher --wait \
             --namespace cattle-system --create-namespace \
