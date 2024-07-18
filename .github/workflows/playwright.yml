@@ -118,7 +118,7 @@ jobs:
     - name: Install playwright
       working-directory: tests
       run: |
-        yarn
+        yarn install
         yarn playwright install chromium  # --with-deps not supported on opensuse
 
 
@@ -138,6 +138,12 @@ jobs:
 
         # KW extension is prime since 2.8.3
         [[ "$KUBEWARDEN" == "source" ]] && REPO=rancher-latest || REPO=rancher-prime
+
+        # 2.9 is released in alpha repo
+        if [[ "$KUBEWARDEN" == "source" ]]; then
+          REPO=rancher-alpha
+          echo RANCHER="rc" | tee -a $GITHUB_ENV
+        fi
 
         # Print matrix
         echo "Event: ${{github.event_name}}"
@@ -178,6 +184,7 @@ jobs:
         RANCHER_PSP=$(kubectl version -o json | jq -r '.serverVersion.minor <= "24"')
 
         helm repo add --force-update rancher-latest https://releases.rancher.com/server-charts/latest
+        helm repo add --force-update rancher-alpha https://releases.rancher.com/server-charts/alpha
         helm repo add --force-update rancher-prime https://charts.rancher.com/server-charts/prime
         helm search repo $REPO/rancher ${RANCHER:+--version "$RANCHER"}
         helm upgrade --install rancher $REPO/rancher --wait \
