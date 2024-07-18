@@ -26,7 +26,7 @@ kubewarden:
       newPolicyReportsIncompatible: 'Policy Reports are not compatible with the current version of the Kubewarden extension. Please update to version 1.4.0 or newer.'
     headers:
       policyServer:
-        title: Policy Servers
+        title: Policy ServersS
         description: Kubewarden uses Policy Servers to receive requests to be validated. It does that by executing Kubewarden's policies.
         linkText: Create Policy Server
         slotTitle: Policy Server Pods
