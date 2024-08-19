@@ -118,6 +118,12 @@ jobs:
     # Use local kuberlr to avoid version skew
     - uses: actions/checkout@v4
 
+    - name: Checkout tests from maintenance branch
+      uses: actions/checkout@v4
+      if: startsWith(matrix.rancher, '2.7') || startsWith(matrix.rancher, '2.8')
+      with:
+        tag: release-1.6
+
     # ==================================================================================================
     # Set up parameters and ENV
     - name: Setup global ENV
