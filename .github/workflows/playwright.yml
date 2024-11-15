@@ -226,9 +226,9 @@ jobs:
     # https://rancher.github.io/dashboard/testing/e2e-test#setup-for-local-tests
 
     - uses: actions/setup-node@v4
-      if: github.event_name == 'pull_request' && github.event.pull_request.base.ref != 'main'
+      if: env.KUBEWARDEN == 'source'
       with:
-        node-version: '16'
+        node-version: ${{ github.event.pull_request.base.ref == 'main' && '20' || '16' }}
 
     - name: Build Kubewarden extension
       if: env.KUBEWARDEN == 'source'
