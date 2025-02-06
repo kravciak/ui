@@ -205,7 +205,7 @@ export class Shell {
     privpod(options?: { name?: string, ns?: string, status?: number }) {
       const name = options?.name || `privpod-${Date.now()}`
       const ns = options?.ns ? `-n ${options.ns}` : ''
-      this.runExec(`kubectl run ${name} --image=busybox --command --restart=Never -it --rm --privileged ${ns} -- true`, options)
+      this.runExec(`kubectl run ${name} --image=registry.k8s.io/busybox:latest --command --restart=Never -it --rm --privileged ${ns} -- true`, options)
     }
 
     @step
