@@ -135,7 +135,6 @@ for (const PolicyPage of pageTypes) {
     const row = await polPage.create(p)
     await checkPolicy(p, polPage, ui)
     await shell.privpod({ ns: p.namespace })
-    console.log('PrivPod: passed')
 
     // Update to Protect mode
     await polPage.goto()
