@@ -198,7 +198,7 @@ export class Shell {
       const ns = options?.ns || '-n cattle-kubewarden-system'
 
       const filter = options?.filter || ''
-      await this.retry(`kubectl get pods --no-headers ${ns} ${filter} 2>&1 | tee /dev/tty | sed -E '/([0-9]+)[/]\\1\\s+Running|Completed/d' | wc -l | grep -qx 0`, options)
+      await this.retry(`kubectl get pods --no-headers ${ns} ${filter} 2>&1 | sed -E '/([0-9]+)[/]\\1\\s+Running|Completed/d' | tee /dev/tty | wc -l | grep -qx 0`, options)
     }
 
     @step
